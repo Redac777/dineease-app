@@ -42,32 +42,48 @@ Interprète-le pour la personne :
 L'identité fait **foi par le token**, jamais par le nom tapé : si le login réel ne correspond pas à la
 personne attendue, arrête-toi et signale-le.
 
-## 5. Ancrer ton périmètre pour les prochaines sessions (`CLAUDE.local.md`)
+## 5. Choisir ta persona et ancrer ton périmètre (`CLAUDE.local.md`)
 Pour que ton Claude se concentre **automatiquement** sur tes modules à **chaque** session (pas seulement
 maintenant), écris un bloc de cadrage dans `CLAUDE.local.md` à la racine. Ce fichier est **gitignoré**
 (perso, jamais poussé) et **chargé automatiquement** au début de chaque session.
 
 - Ne le fais que si `ok: true` **et** `myModules` non vide (sinon rien à cadrer : dis-le et passe).
+
+### 5a. Définir la persona (l'étiquette qui nomme tes branches et signe tes commits)
+La persona est le 3e argument de `new-task.sh` (`type/persona/scope`) : elle **nomme la branche** et
+**signe les commits** du worktree. Ce n'est **pas** ton compte GitHub (ça, c'est `me`, qui reste ton
+identité réelle dans CODEOWNERS) ; c'est juste une étiquette courte, à garder **stable** pour que tout
+ton historique soit attribué pareil.
+
+- **Propose un défaut dérivé du login réel `me`** (jamais repartir de zéro) : garde les lettres
+  minuscules, enlève un éventuel suffixe numérique (ex. `mbaghireda-001` → `mbaghi`, `Redac777` →
+  `redac`). Le défaut est fiable car `me` vient du token.
+- **Demande confirmation** : « Ta persona pour nommer tes branches et signer tes commits ? [`<défaut>`] ».
+  La personne valide le défaut ou tape la sienne. Normalise sa réponse comme le fait `new-task.sh`
+  (minuscules, sans espaces ni caractères spéciaux).
+
+### 5b. Écrire le bloc de périmètre
 - **Idempotent** : si `CLAUDE.local.md` existe déjà, remplace **uniquement** le bloc entre les marqueurs
   `onboard:scope` (ne duplique pas, ne touche pas au reste du fichier).
 - Déduis des noms de modules lisibles depuis `myModules` (ex. `/src/modules/tables/` → `tables`).
 
-Bloc à écrire dans `CLAUDE.local.md` (remplace `<me>` et la liste par les vraies valeurs) :
+Bloc à écrire dans `CLAUDE.local.md` (remplace `<me>`, `<persona>` et la liste par les vraies valeurs) :
 
 <!-- onboard:scope:start -->
 ## Mon périmètre (généré par /onboard — perso, jamais poussé)
 - **Je suis** : @<me>
+- **Ma persona** : <persona> (nomme mes branches `type/<persona>/scope` et signe mes commits)
 - **Mes modules** : <liste, ex. tables, ordering>
 - **Règle** : je travaille **uniquement** dans mes modules, **un seul à la fois**. Je ne touche pas au
   module d'un autre owner. Si une tâche l'exige vraiment, j'ouvre une PR dédiée : elle sera **bloquée**
   tant que l'owner de la zone ne l'a pas approuvée (modèle owner-gated). Je le signale à l'humain plutôt
   que d'agir hors de ma zone.
-- **Démarrer une tâche** : `scripts/new-task.sh <type> <un-de-mes-modules> <ma-persona>`, puis je suis
+- **Démarrer une tâche** : `scripts/new-task.sh <type> <un-de-mes-modules> <persona>`, puis je suis
   la boucle de travail du `CLAUDE.md`.
 <!-- onboard:scope:end -->
 
-Confirme à la personne : « Ton périmètre est ancré dans `CLAUDE.local.md` : ton assistant s'y tiendra à
-chaque session. »
+Confirme à la personne : « Ta persona **`<persona>`** et ton périmètre sont ancrés dans
+`CLAUDE.local.md` : ton assistant s'y tiendra à chaque session (branches `type/<persona>/scope`). »
 
 ## 6. Vérifier que l'écoute des PR marche
 Lance `node scripts/pr-inbox.mjs` : le champ `me` doit afficher le bon compte. Si oui, propose de rester

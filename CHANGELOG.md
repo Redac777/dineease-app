@@ -11,6 +11,9 @@
   des dépendances de la stack.
 
 ### Modifié
+- chore(onboard): `/onboard` capture désormais la **persona** du collaborateur (défaut dérivé du login
+  réel `me`, confirmation demandée) et l'ancre dans le bloc `onboard:scope` de `CLAUDE.local.md`, à
+  côté des modules ; l'assistant connaît alors la persona à chaque session pour `new-task.sh`.
 - chore(gouvernance): adopte le modèle de revue **owner-gated** (un seul owner par module,
   `require_code_owner_reviews=true` + `required_approving_review_count=0`) ; ADR-0002. Aligne
   `add-collab.mjs`, `/add-collab`, `CONTRIBUTING.md` et `CLAUDE.md`. `@mbaghireda-001` devient owner
