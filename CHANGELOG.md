@@ -6,7 +6,9 @@
 
 ## [Non publié]
 ### Ajouté
-- (rien pour l'instant)
+- feat(auth): couche logique du module auth (validation Zod + service à gateway injectée, message
+  générique anti-énumération) + 6 tests unitaires ; ADR-0001 (logique d'abord). Config Vitest + install
+  des dépendances de la stack.
 
 ### Modifié
 -

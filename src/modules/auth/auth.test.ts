@@ -1,18 +1,60 @@
-// Test unitaire d'exemple — Module auth
-// Règle : 1 fonctionnalité = au moins 1 test unitaire (niveau (a) de la Règle des 3 niveaux).
-// Framework : Vitest. Lancer avec : npm test
-//
-// Remplace cet exemple par de vrais tests de la logique du module.
+// Tests unitaires du module auth (niveau (a) de la règle des 3 niveaux). Vitest.
+import { describe, it, expect, vi } from 'vitest';
+import { createAuth, GENERIC_SIGNIN_ERROR, parseCredentials } from './index';
+import type { AuthGateway, AuthUser } from './index';
 
-import { describe, it, expect } from 'vitest';
+const user: AuthUser = { id: 'u1', email: 'gerant@resto.ma', role: 'gerant', restaurantId: 'r1' };
 
-describe('auth', () => {
-  it('exemple : décrit le comportement attendu d une fonctionnalité', () => {
-    // Arrange
-    const input = 1 + 1;
-    // Act / Assert
-    expect(input).toBe(2);
+function fakeGateway(overrides: Partial<AuthGateway> = {}): AuthGateway {
+  return {
+    signUp: vi.fn(async () => user),
+    signIn: vi.fn(async () => user),
+    signOut: vi.fn(async () => {}),
+    getCurrentUser: vi.fn(async () => user),
+    ...overrides,
+  };
+}
+
+describe('validation des identifiants', () => {
+  it('accepte un email valide et normalise (minuscules + trim)', () => {
+    const creds = parseCredentials({ email: '  Gerant@Resto.MA ', password: 'motdepasse1' });
+    expect(creds.email).toBe('gerant@resto.ma');
   });
 
-  // it('cas limite / erreur', () => { ... });
+  it('rejette un email invalide', () => {
+    expect(() => parseCredentials({ email: 'pasunemail', password: 'motdepasse1' })).toThrow();
+  });
+
+  it('rejette un mot de passe trop court', () => {
+    expect(() => parseCredentials({ email: 'a@b.com', password: 'court' })).toThrow();
+  });
+});
+
+describe('service auth', () => {
+  it('signUp valide les identifiants puis délègue à la gateway', async () => {
+    const gw = fakeGateway();
+    const auth = createAuth(gw);
+    const res = await auth.signUp({ email: 'gerant@resto.ma', password: 'motdepasse1' });
+    expect(res).toEqual(user);
+    expect(gw.signUp).toHaveBeenCalledOnce();
+  });
+
+  it('signIn renvoie un message générique en cas d échec (anti-énumération)', async () => {
+    const gw = fakeGateway({
+      signIn: vi.fn(async () => {
+        throw new Error('user not found');
+      }),
+    });
+    const auth = createAuth(gw);
+    await expect(
+      auth.signIn({ email: 'gerant@resto.ma', password: 'motdepasse1' }),
+    ).rejects.toThrow(GENERIC_SIGNIN_ERROR);
+  });
+
+  it('signIn rejette des identifiants invalides AVANT d appeler la gateway', async () => {
+    const gw = fakeGateway();
+    const auth = createAuth(gw);
+    await expect(auth.signIn({ email: 'x', password: 'y' })).rejects.toThrow();
+    expect(gw.signIn).not.toHaveBeenCalled();
+  });
 });
