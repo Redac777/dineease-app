@@ -163,7 +163,7 @@ Un commit = **un seul** changement logique. Jamais de secret ni de `.env`. Jamai
 Règle d'or : rien d'important ne reste seulement dans `journal/`. Promeus-le avant d'ouvrir la PR.
 
 ## Collaboration
-- Ajouter un collaborateur (owner) : `/add-collab` (handle + modules → CODEOWNERS par PR + accès Write + approbations à 1).
+- Ajouter un collaborateur (owner) : `/add-collab` (handle + modules → CODEOWNERS par PR, **owner unique** par module + accès Write + modèle owner-gated `approvals=0` + `require_code_owner_reviews=true`, voir ADR-0002).
 - Retirer un collaborateur (owner) : `/remove-collab` (réaffecte les modules orphelins avant de retirer).
 - Rejoindre le projet (nouveau venu) : `/onboard` après le clone.
 - Rester à l'écoute des PR : `/pr-watch` (l'humain tranche toujours).

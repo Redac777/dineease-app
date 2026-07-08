@@ -39,14 +39,28 @@ worktree, pour qu'on sache toujours qui travaille (voir §personas).
 - Revue **CODEOWNERS** obligatoire. Squash merge + suppression auto de la branche.
 - Conversations résolues avant merge.
 
-## Simuler une équipe à plusieurs avec un seul compte GitHub (personas)
-Quand une seule personne joue plusieurs devs :
-- On garde des **personas** par convention : `feat/devA/...`, `feat/devB/...`, et CODEOWNERS attribue
-  chaque module à un persona.
-- GitHub interdit d'**approuver sa propre PR** : on met donc les **approbations requises à 0** (au lieu
-  de 1). On **conserve** la CI verte + la revue CODEOWNERS + les autres protections.
-- Résultat : on vit le vrai flux worktrees → PR → merge sans se bloquer soi-même.
-- Pour une vraie équipe : passer les approbations à 1 (ou 2) et retirer l'assouplissement.
+## Modèle de revue : « owner-gated » (un module = un owner) — voir ADR-0002
+Le gate de revue vient du **code-owner**, pas d'un compteur d'approbations. Réglages sur `main` et
+`dev_branch` :
+- **`require_code_owner_reviews = true`** : toute PR qui touche une zone exige l'approbation de
+  **l'owner de cette zone**.
+- **`required_approving_review_count = 0`** : pas d'approbation aveugle imposée en plus.
+- On **conserve** la CI verte + les autres protections (pas de push direct, branche à jour, squash).
+
+Conséquences concrètes :
+- L'owner d'un module **self-merge** ses propres PR sur sa zone (aucun autre owner à solliciter).
+- Une PR d'un **non-owner** sur cette zone est **bloquée tant que l'owner n'a pas approuvé**.
+
+Ne PAS monter `required_approving_review_count` à 1+ : GitHub interdit d'approuver sa propre PR, donc un
+owner unique se bloquerait sur sa propre zone. Exiger une 2e paire d'yeux systématique supposerait ≥2
+owners réels **par zone protégée** (choix non retenu ici, voir ADR-0002).
+
+### Simulation à compte unique (personas)
+Quand une seule personne joue plusieurs devs : on garde des **personas** par convention
+(`feat/devA/...`, `feat/devB/...`), CODEOWNERS attribue chaque module à un persona, et le modèle
+owner-gated ci-dessus s'applique tel quel (`approvals = 0`). Le scope-guard (`check-scope.mjs`)
+verrouille le territoire du code même quand CODEOWNERS ne mord pas encore (handles fictifs ignorés par
+GitHub).
 
 ## Gérer les collaborateurs (comptes GitHub) — définir, ajouter, modifier
 Deux notions à **ne pas confondre** :
@@ -63,18 +77,20 @@ ne s'applique alors pas. C'est pour ça qu'en simulation à compte unique, CODEO
 ### Ajouter un collaborateur (ou passer de personas fictifs à de vrais comptes)
 
 **Le plus simple : la commande `/add-collab`** (côté owner). Elle t'interroge (handle réel + modules à
-affecter), met à jour **CODEOWNERS par PR**, ajoute la personne en **collaborateur Write** et remonte
-les **approbations à 1**, puis te dit quoi transmettre au collaborateur (`clone` → `dev_branch` →
-`/onboard`). Le collaborateur, via `/onboard`, voit son identité vérifiée **par son token** et
-**l'affichage de ses modules**.
+affecter), met à jour **CODEOWNERS par PR**, ajoute la personne en **collaborateur Write** et applique
+le modèle **owner-gated** (`approvals = 0` + `require_code_owner_reviews = true`, voir ADR-0002), puis
+te dit quoi transmettre au collaborateur (`clone` → `dev_branch` → `/onboard`). Le collaborateur, via
+`/onboard`, voit son identité vérifiée **par son token** et **l'affichage de ses modules**.
 
 Sous le capot (ce que fait la commande, à faire à la main si besoin) :
 1. **GitHub** : inviter son handle en accès **Write** (`scripts/add-collab.mjs`, ou *Settings →
    Collaborators*). Il accepte l'invitation.
-2. **CODEOWNERS** (c'est de la loi → **via PR**) : remplace le persona par le vrai handle pour ses
-   modules, ex. `/src/modules/moduleX/   @dev-github`. Merge cette PR **avant** l'étape 3.
-3. Si tu quittes la simulation à compte unique : passe les **approbations requises à 1** sur
-   `dev_branch` et `main`. La revue croisée devient effective.
+2. **CODEOWNERS** (c'est de la loi → **via PR**) : attribue-lui ses modules en **owner unique**, ex.
+   `/src/modules/moduleX/   @dev-github` (pas de co-propriété par défaut, voir ADR-0002). Merge cette PR
+   **avant** l'étape 3.
+3. Garantis le modèle owner-gated sur `dev_branch` et `main` : `require_code_owner_reviews = true` et
+   `required_approving_review_count = 0`. La revue de zone devient effective (l'owner garde le
+   self-merge sur sa propre zone).
 4. Vérifie : `GET /repos/<owner>/<repo>/codeowners/errors` ne doit plus renvoyer d'erreur.
 
 ### Modifier / retirer un collaborateur
