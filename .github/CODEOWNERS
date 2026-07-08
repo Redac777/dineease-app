@@ -1,0 +1,26 @@
+# CODEOWNERS — qui possède quoi.
+# Toute PR touchant un chemin ci-dessous réclame AUTOMATIQUEMENT la revue de l'owner indiqué.
+# Syntaxe : <chemin>   @pseudo-github   (le dernier motif qui matche gagne).
+#
+# IMPORTANT : les owners doivent être de VRAIS comptes/équipes GitHub ayant accès en écriture au repo.
+# Un handle inexistant (ex. un persona fictif de simulation) est ignoré par GitHub → le verrou ne
+# s'applique pas. Pour ajouter/modifier un collaborateur, voir CONTRIBUTING §« Gérer les collaborateurs »
+# (ou les commandes /add-collab et /remove-collab).
+
+# Fichiers de loi = revus par le/les responsable(s) du projet
+/CLAUDE.md               @Redac777
+/constitution.md         @Redac777
+/docs/                   @Redac777
+/.github/                @Redac777
+
+# Un module = un owner (généré depuis la carte module → owner)
+/src/modules/auth/         @Redac777
+/src/modules/restaurant/   @Redac777
+/src/modules/menu/         @Redac777
+/src/modules/tables/       @Redac777
+/src/modules/ordering/     @Redac777
+/src/modules/kitchen/      @Redac777
+/src/modules/service/      @Redac777
+/src/modules/reviews/      @Redac777
+/src/modules/platform/     @Redac777
+/src/modules/billing/      @Redac777

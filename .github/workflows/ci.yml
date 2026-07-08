@@ -1,0 +1,62 @@
+name: CI
+
+# Le robot qui vérifie chaque Pull Request et chaque push. Le merge sur main est bloqué tant que ce
+# job n'est pas vert (voir la protection de branche dans SETUP.md).
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev_branch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # nécessaire à check-scope (diff vs la branche de base)
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      # Garde-fou de périmètre : une PR ne touche qu'un seul module, celui de son scope de branche.
+      - name: Périmètre (un module à la fois)
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-scope.mjs
+
+      # Garde-fou : les dépendances doivent rester dans la liste approuvée de constitution.md.
+      - name: Dépendances conformes à la constitution
+        run: node scripts/check-deps.mjs
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests unitaires
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Scan de secrets : échoue si une clé / un .env se glisse dans la PR.
+      - name: Scan de secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

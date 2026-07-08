@@ -1,0 +1,42 @@
+# --- Dépendances / build ---
+node_modules/
+dist/
+build/
+.next/
+.expo/
+web-build/
+*.tsbuildinfo
+
+# --- Secrets (JAMAIS commités) ---
+.env
+.env*.local
+*.pem
+*.key
+*.p8
+*.p12
+*.mobileprovision
+
+# --- MÉMOIRE SESSION (par-dev, jamais poussée) ---
+journal/*
+!journal/README.md
+!journal/.gitkeep
+CLAUDE.local.md
+.claude/settings.local.json
+
+# --- Tests de sécurité locaux (peuvent contenir des secrets une fois remplis) ---
+security/*.local.*
+security/secrets/
+
+# --- Worktrees ---
+worktrees/
+
+# --- OS / éditeurs ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# --- Divers ---
+coverage/
+*.log

@@ -1,0 +1,37 @@
+# Gabarit de suite de tests de sécurité (adapter à ton API)
+#
+# But : vérifier, en tapant directement l'API (comme un attaquant), que la sécurité côté serveur
+# (RLS / policies / auth) protège bien les données. À copier en `security/security-tests.local.sh`
+# (gitignoré) une fois rempli avec de vrais identifiants de test.
+#
+# Prérequis : 2 comptes de test — A (celui qu'on utilise) et B (la "victime"). Créer au moins une
+# donnée sur B. Renseigner API_URL, ANON_KEY (clé PUBLIQUE seulement), et les identifiants de A.
+#
+# Utilisation : bash security/security-tests.local.sh  → chaque test affiche PASS ou FAIL.
+
+API_URL="{{API_URL}}"          # ex. https://xxxx.supabase.co
+ANON_KEY="__CLE_PUBLIQUE__"     # JAMAIS la clé service_role / admin
+EMAIL_A="__email_compte_A__"
+PASSWORD_A="__mot_de_passe_A__"
+OTHER_USER_ID="__id_du_compte_B__"
+OTHER_RESOURCE_ID="__id_d_une_ressource_de_B__"
+
+# --- 0. Login (récupère le token de A) ---
+# TOKEN=$(curl -s "$API_URL/auth/v1/token?grant_type=password" \
+#   -H "apikey: $ANON_KEY" -H "Content-Type: application/json" \
+#   -d "{\"email\":\"$EMAIL_A\",\"password\":\"$PASSWORD_A\"}" | jq -r .access_token)
+
+check() { # check "<nom>" "<attendu: EMPTY|FORBIDDEN|OK>" "<réponse http>"
+  # Implémente la comparaison : EMPTY = corps vide/[]; FORBIDDEN = 401/403; OK = 2xx.
+  echo "[$2] $1"
+}
+
+# --- 1. Escalade de privilège : tenter de se donner un rôle/plan supérieur → FORBIDDEN ---
+# --- 2a. Lire les données de B → EMPTY ---
+# --- 2b. Modifier une ressource de B → 0 ligne modifiée / FORBIDDEN ---
+# --- 3. Insérer une ressource au nom de B → FORBIDDEN ---
+# --- 4a. Lire des données sans token (anonyme) → EMPTY/FORBIDDEN ---
+# --- 4b. Lire les profils sans token → EMPTY/FORBIDDEN ---
+# --- 5. Contrôle POSITIF : modifier SA PROPRE donnée → OK (prouve qu'on n'a pas tout bloqué) ---
+
+echo "Adapter chaque bloc à ton API, puis lancer. Un FAIL = une faille à corriger côté policies."
