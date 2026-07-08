@@ -4,10 +4,11 @@
 // owner) le DONNE. La mise à jour de CODEOWNERS (fichier de loi) se fait par PR via la commande
 // /add-collab ; ce script fait les deux actions qui vivent côté GitHub :
 //   1. ajouter la personne comme collaborateur du repo (droits Write / push) ;
-//   2. remonter le nombre d'approbations requises sur les branches protégées (0 -> 1 par défaut),
-//      maintenant qu'une vraie revue croisée est possible.
+//   2. appliquer le modèle owner-gated sur les branches protégées : require_code_owner_reviews = true
+//      + required_approving_review_count = 0 (le gate vient du code-owner, pas d'un compteur). Voir
+//      ADR-0002. Ne PAS monter les approbations à 1+ : un owner unique se bloquerait sur sa propre PR.
 //
-// Usage : node scripts/add-collab.mjs <handle-github> [approvals=1] [branches=main,dev_branch]
+// Usage : node scripts/add-collab.mjs <handle-github> [approvals=0] [branches=main,dev_branch]
 // Le token de .env doit être celui de l'OWNER (PAT classic, scope repo).
 import { execSync } from 'node:child_process';
 
@@ -21,10 +22,10 @@ if (!token) {
 }
 
 const handle = (process.argv[2] || '').replace(/^@/, '');
-const approvals = Number(process.argv[3] ?? 1);
+const approvals = Number(process.argv[3] ?? 0);
 const branches = (process.argv[4] || 'main,dev_branch').split(',').map((b) => b.trim()).filter(Boolean);
 if (!handle) {
-  console.error('add-collab: usage: node scripts/add-collab.mjs <handle-github> [approvals=1] [branches]');
+  console.error('add-collab: usage: node scripts/add-collab.mjs <handle-github> [approvals=0] [branches]');
   process.exit(2);
 }
 
@@ -75,7 +76,9 @@ if (addRes.status === 201) {
   result.warnings.push(`Ajout collaborateur: réponse inattendue ${addRes.status} ${await addRes.text()}`);
 }
 
-// 2. Remonter les approbations requises sur chaque branche protégée.
+// 2. Appliquer le modèle owner-gated sur chaque branche protégée (ADR-0002) :
+//    require_code_owner_reviews = true (le gate) + required_approving_review_count = approvals (0 par
+//    défaut, pour ne pas bloquer un owner unique sur sa propre PR).
 for (const branch of branches) {
   const getRes = await api(`/repos/${owner}/${repo}/branches/${branch}/protection`);
   if (getRes.status === 404) {
@@ -94,16 +97,14 @@ for (const branch of branches) {
     enforce_admins: !!(cur.enforce_admins && cur.enforce_admins.enabled),
     required_pull_request_reviews: {
       dismiss_stale_reviews: !!(cur.required_pull_request_reviews && cur.required_pull_request_reviews.dismiss_stale_reviews),
-      require_code_owner_reviews: cur.required_pull_request_reviews
-        ? cur.required_pull_request_reviews.require_code_owner_reviews !== false
-        : true,
+      require_code_owner_reviews: true,
       required_approving_review_count: approvals,
     },
     restrictions: null,
   };
   const putRes = await api(`/repos/${owner}/${repo}/branches/${branch}/protection`, 'PUT', payload);
   if (putRes.ok) {
-    result.steps.push(`Branche "${branch}": approbations requises = ${approvals}.`);
+    result.steps.push(`Branche "${branch}": owner-gated (code-owner requis, approbations = ${approvals}).`);
   } else {
     result.warnings.push(`Maj protection "${branch}": ${putRes.status} ${await putRes.text()}`);
   }

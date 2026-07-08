@@ -11,10 +11,15 @@
   des dépendances de la stack.
 
 ### Modifié
--
+- chore(gouvernance): adopte le modèle de revue **owner-gated** (un seul owner par module,
+  `require_code_owner_reviews=true` + `required_approving_review_count=0`) ; ADR-0002. Aligne
+  `add-collab.mjs`, `/add-collab`, `CONTRIBUTING.md` et `CLAUDE.md`. `@mbaghireda-001` devient owner
+  unique de `tables` et `ordering`.
 
 ### Corrigé
--
+- chore(collab): retire la co-propriété par défaut introduite en ajoutant `@mbaghireda-001` (violait
+  « un module = un owner ») et corrige la protection de branche (`approvals=1`/code-owner non exigé →
+  modèle owner-gated). Voir `docs/mistakes-log.md`.
 
 ---
 
